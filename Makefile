@@ -5,8 +5,8 @@ OBJ = obj
 INCLUDE = include
 INC = -I +lablGL -I $(INCLUDE) -I $(OBJ)
 LIBS = lablglut.cmxa lablgl.cmxa
-OBJECTS = $(OBJ)/physics.cmx $(OBJ)/main.cmx
-INTERFACES = $(OBJ)/physics.cmi
+OBJECTS = $(OBJ)/Body.cmx $(OBJ)/Particle.cmx $(OBJ)/Physics.cmx $(OBJ)/main.cmx
+INTERFACES = $(OBJ)/Body.cmi $(OBJ)/Particle.cmi $(OBJ)/Physics.cmi
 NAME = particle
 
 # ocamlopt -c physics.mli

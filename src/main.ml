@@ -1,19 +1,19 @@
-(*include Physics;;*)
+include Physics;;
+include Particle;;
 
 (* quantos milisegundos dura cada frame*)
 let mili = 15
 
 (*posicao inicial dos pontos*)
-let dots = ref [0.5,0.5 ; 0.2,0.3 ; 0.4,0.7]
+let dots = ref [new particle 0.5 (0.5) ; new particle 0.2 (0.3) ; new particle 0.4 (0.7)]
 
 (*
 	desenha cada ponto em sua posicao
 *)
-let drawDots points =
-
-	GlDraw.begins `points;
-	List.iter GlDraw.vertex2 points;
-	GlDraw.ends ()
+let rec drawDots points = match points with
+  | h::r -> h#draw;
+						drawDots r;
+	| [] -> ()
 
 (*
 	atualiza o desenho
@@ -28,7 +28,7 @@ let display ()=
 	move os pontos para baixo
 *)
 let rec timerF ~value =
-	dots := Physics.move !dots;
+	Physics.move !dots;
 	Glut.timerFunc ~ms:mili ~cb:timerF ~value:1;
 	Glut.postRedisplay ()
 

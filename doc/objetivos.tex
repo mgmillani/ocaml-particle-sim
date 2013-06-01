@@ -1,0 +1,99 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{hyperref}
+\usepackage{indentfirst}
+\usepackage{color}
+
+\hypersetup
+{
+	colorlinks=true,
+	linkcolor=blue
+}
+
+\title{Objetivos Atingidos}
+\author{Aline \and Marcelo Garlet Millani}
+
+\definecolor{notDone}{RGB}{240,30,5}
+\definecolor{done}{RGB}{15,125,15}
+
+\begin{document}
+
+\maketitle
+
+\section{}
+
+\begin{itemize}
+ \item Definição e uso de classes
+		{\color{notDone}
+		\begin{enumerate}
+			\item Particle (Particle.ml)
+			\item 
+		\end{enumerate}
+		}
+ \item Encapsulamento e proteção dos atributos
+ \item Organização do código em espaços de nome diferenciados
+ \item Mecanismo de herança:
+	\begin{itemize}
+	 \item especificação de 3 níveis de hierarquia
+		{\color{notDone}
+		\begin{enumerate}
+			\item Body (Body.ml)
+			\item Particle (Particle.ml)
+			\item Electric (Electric.ml)
+		\end{enumerate}
+		}
+	 \item especificação de uma classe abstrata
+		{\color{notDone}
+		\begin{enumerate}
+			\item Body (Body.ml)
+		\end{enumerate}
+		}
+	 \item polimorfismo por inclusão
+	\end{itemize}
+ \item Polimorfismo paramétrico
+	\begin{itemize}
+	 \item especificação de algoritmo utilizando o recurso
+	 \item especificação de estrutura de dados genérica
+	 {\color{notDone}
+		\begin{enumerate}
+			\item Árvore para o algoritmo de Barnes-Hut (\url{http://en.wikipedia.org/wiki/Barnes-Hut})
+		\end{enumerate}
+		}
+	\end{itemize}
+ \item Polimorfismo por sobrecarga
+ \item Especificação e uso de funções como elementos de primeira ordem
+ \item Especificação e uso de funções de ordem maior
+ {\color{notDone}
+		\begin{enumerate}
+			\item Body (Body.ml)
+		\end{enumerate}
+		}
+ \item Uso de lista para manipulação de estruturas em funções de ordem maior (as funções devem ser puras)
+ \item Uso de funções lambda
+		{\color{notDone}
+		\begin{enumerate}
+			\item Poderia ser usado em uma função que aplica atrito (Physics.ml)
+		\end{enumerate}
+		}
+ \item Currying
+ \item Pattern matching
+		{\color{done}
+		\begin{enumerate}
+			\item drawDots (main.ml)
+			\item moveDots (Physics.ml)
+		\end{enumerate}
+		}
+ \item Recursão como mecanismo de iteração
+		{\color{done}
+		\begin{enumerate}
+			\item drawDots (main.ml)
+			\item moveDots (Physics.ml)
+		\end{enumerate}
+		}
+ \item Delegates
+
+
+\end{itemize}
+\end{document}
