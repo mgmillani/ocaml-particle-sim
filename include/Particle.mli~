@@ -4,7 +4,7 @@ class particle:
 	object
 		method draw : unit
 	end;;
-
+(*
 class electric :
 	float ->
 	float ->
@@ -27,3 +27,4 @@ class electric :
 		method getForce : < getCharge : float; getPosition : float * float; .. > -> float * float
 	end;;
 
+*)
