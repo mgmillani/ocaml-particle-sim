@@ -8,10 +8,10 @@ let miny = ~-. 0.5
 let maxx = 0.5
 let maxy = 0.5
 
-let width = ref 1 and height = ref 1
-
 (*posicao inicial dos pontos*)
-let dots = ref [new electric 0.5 0.5 0.0002 ; new electric 0.4 0.7 ~-. 0.0003 ; new electric minx miny 0.0005 ; new electric maxx miny 0.0009 ; new electric maxx maxy ~-. 0.001 ; new electric minx maxy ~-. 0.0007]
+(*let dots = ref [new electric 0.4 0.7 ~-. 0.0003 ; new electric minx miny 0.0005 ; new electric maxx miny 0.0009 ; new electric maxx maxy ~-. 0.0001 ; new electric minx maxy ~-. 0.0007 ; new electric 0.5 0.5 0.0002 ]*)
+
+let dots = ref [new electric 0.4 0.7 ~-. 0.0003 ; new electric 0.5 0.2 0.0005]
 
 (*
 	desenha cada ponto em sua posicao
@@ -24,35 +24,45 @@ let rec drawDots points = match points with
 (*
 	atualiza o desenho
 *)
-let display ()=
+let display dots ()=
 	GlClear.clear [ `color ];
 	drawDots !dots;
 	Glut.swapBuffers ()
 
 let reshape ~w ~h =
-  width := max 1 w;
-  height := max 1 h;
   GlDraw.viewport 0 0 w h
-	
+
 (*
 	controla o passo entre um frame e outro
 	move os pontos para baixo
 *)
 let rec timerF ~value =
 	Physics.move !dots;
-	dots := Physics.simulateElectricNaive !dots;
+	Physics.simulateElectricNaive !dots;
 	Glut.timerFunc ~ms:mili ~cb:timerF ~value:1;
 	Glut.postRedisplay ()
+
+let mouseHandler ~button ~state ~x ~y =
+	let width = float_of_int (Glut.get(Glut.WINDOW_WIDTH)) in
+		let height = float_of_int (Glut.get(Glut.WINDOW_HEIGHT)) in
+		let rx = (float_of_int x) /. width in
+		let ry = (float_of_int y) /. height in
+		let px = rx *. 2.0 -. 1.0 in
+		let py = ry *. ~-. 2.0 +. 1.0 in
+		if state = Glut.DOWN then
+			if button = Glut.LEFT_BUTTON then	dots := ( new electric px py 0.0004 ) :: !dots else dots := ( new electric px py ~-. 0.0004 ) :: !dots
+		; ()
 
 (*let idle () =*)
 
 let _ =
-	ignore (Glut.init Sys.argv);	
+	ignore (Glut.init Sys.argv);
 	Glut.initDisplayMode ~double_buffer:true ();
 	ignore (Glut.createWindow ~title:"Simparticle");
-	
-	Glut.displayFunc ~cb:display;
+
+	Glut.displayFunc ~cb:(display dots);
 	Glut.reshapeFunc ~cb:reshape;
+	Glut.mouseFunc ~cb:mouseHandler;
 	(*Glut.idleFunc ~cb:(Some idle);*)
 	Glut.timerFunc ~ms:mili ~cb:timerF ~value:1;
 	Glut.mainLoop()
