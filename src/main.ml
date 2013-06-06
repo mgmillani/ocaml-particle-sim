@@ -50,7 +50,10 @@ let mouseHandler ~button ~state ~x ~y =
 		let px = rx *. 2.0 -. 1.0 in
 		let py = ry *. ~-. 2.0 +. 1.0 in
 		if state = Glut.DOWN then
-			if button = Glut.LEFT_BUTTON then	dots := ( new electric px py 0.0004 ) :: !dots else dots := ( new electric px py ~-. 0.0004 ) :: !dots
+			if button = Glut.LEFT_BUTTON then
+				dots := ( new electric px py 0.004 ) :: !dots
+			else
+				dots := ( new electric px py ~-. 0.0004 ) :: !dots
 		; ()
 
 (*let idle () =*)

@@ -13,8 +13,15 @@ class electric x y charge_init =
 	let coulombConst = 8.9875517873681764 in
 	object (self)
 		inherit particle x y
-		val charge = charge_init
+		val mutable charge = charge_init
+		val mutable dotColor = (1.0, 0.0, 0.0)
+		method draw =
+			GlDraw.begins `points;
+			GlDraw.color dotColor;
+			GlDraw.vertex2 position;
+			GlDraw.ends ()
 		method getCharge = charge
+		method transfer other_charge = charge <- (charge +. other_charge) /. 2.0
 		method getForce (otherParticle : electric) =
 			(* vetor desta particula a outra *)
 			let (x0,y0) = self#getPosition in
@@ -25,7 +32,9 @@ class electric x y charge_init =
 			(* vetor unitario desta particula a outra *)
 			let (ux,uy) = (fx /. distance , fy /. distance) in
 			let force = coulombConst *. charge *. otherParticle#getCharge /. sqrDistance in
-			if sqrDistance < 0.000001 then (0.0,0.0) else
+			if sqrDistance < 0.001 then
+				( self#transfer otherParticle#getCharge; otherParticle#transfer charge;(0.0,0.0) )
+			else
 				(* a força é multiplicada por -1 pois deve ser de repulsão quando as cargas tiverem o mesmo sinal (ou seja, quando for positiva) *)
 				(ux *. ~-. force , uy *. ~-. force)
 	end;;

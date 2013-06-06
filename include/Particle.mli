@@ -17,6 +17,7 @@ class electric :
 		method draw : unit
 		method getAcceleration : float * float
 		method getCharge : float
+		method discharge : unit
 		method getForce :
 			< getCharge : float; getPosition : float * float; .. > ->
 			float * float
