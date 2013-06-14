@@ -60,8 +60,7 @@ let mouseHandler ~button ~state ~x ~y =
 
 let _ =
 
-	(*dots := Loader.loadConfig "config"*)
-	Loader.loadConfig "config"
+	dots := Loader.loadConfig "config"
 	(*
 	ignore (Glut.init Sys.argv);
 	Glut.initDisplayMode ~double_buffer:true ();

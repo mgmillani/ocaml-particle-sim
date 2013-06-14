@@ -1,0 +1,265 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{hyperref}
+\usepackage{indentfirst}
+\usepackage{color}
+\usepackage{float}
+\usepackage{listings}
+
+\hypersetup
+{
+	colorlinks=true,
+	linkcolor=blue
+}
+
+\definecolor{darkGreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.2,0.2,0.2}
+
+\lstset{
+	extendedchars=true,
+	inputencoding=utf8,
+	basicstyle=\small,
+	keywordstyle=\color{red}\bfseries,
+	identifierstyle=\color{darkGreen},
+	commentstyle=\color{gray}\textit,
+	stringstyle=\color{magenta},
+	showstringspaces=false,
+	tabsize=2,
+	language=[Objective]Caml,
+	numbers=left,         % Números na margem da esquerda
+	numberstyle=\tiny,    % Números pequenos
+	stepnumber=1,         % De 1 em 1
+	frame=single,
+	numbersep=5pt         % Separados por 5pt
+}
+
+\lstset
+{
+	literate={ê}{{\^e}}1 {ç}{{\c{c}}}1 {ã}{{\~a}}1 {â}{{\^a}}1 {õ}{{\~o}}1 {í}{{\'i}}1 {é}{{\'e}}1 {á}{{\'a}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+}
+
+\title{Objetivos Atingidos}
+\author{Aline \and Marcelo Garlet Millani}
+
+\definecolor{notDone}{RGB}{240,30,5}
+\definecolor{done}{RGB}{15,125,15}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+ Este trabalho implementa um simulador de partículas elétricas em OCaml.
+\end{abstract}
+
+\section{Descrição do problema}
+
+	O problema consiste em, dado um conjunto de partículas, similar as forças de atração elétrica entre elas, desenhando-as conforme se movem.
+	
+	Para desenhar numa janela, usamos as bibliotecas lablgl e lablglut, que são, respectivamente, implementações de OpenGl e GLUT para OCaml.
+	
+\section{OCaml}
+
+	OCaml é uma linguagem multi-paradigma que apresenta características imperativas, funcionais e de orientação a objetos. Atualmente, é a principal implementação de Caml.
+	
+	Possui características de ML, como tipagem estática, que permite uma maior confiabilidade no código por sabermos em tempo de compilação que não haverão operações não definidas, e inferência de tipos, permitindo que o programador não se preocupe com o tipo de cada variável e melhorando a redigibilidade e diminuindo o acoplamento por tipagem.
+	
+	Outra propriedade muito interessante de OCaml é pattern matching, pois aumenta consideravelmente a expressividade da linguagem ao descrever construções if-else encadeadas através de uma sintaxe muito mais clara, além de permitir uma decomposição estrutural de forma mais natural.
+	
+	Por ser uma linguagem compilada, com tipagem estática e uso de referências a memória, programas em OCaml são bastante eficientes, fazendo com que a linguagem possa ser usada em diversos casos práticos, diferentemente de algumas linguagens como Python e Java, que apresentam um custo em processamento ou memória proibitivos para diversas aplicações.
+	
+	A orientação a objetos de OCaml permite o encapsulamento de informações ao fornecer para o programador meios de definir métodos e atributos privados ou públicos. Python não possui mecanismos para isso, de forma que convenções devem ser adotados. Por um lado, se tudo for público há maior flexibilidade, mas o uso de uma classe pode se tornar mais obscuros por não sabermos quais alterações manterão a consistência dos dados.
+	
+\section{Implementação}
+
+\subsection{Definição e uso de classes}
+	Foram criadas 3 classes: Body, Particle e Electric, sendo Body abstrata.
+	\begin{figure}[H]
+	\centering	
+\begin{lstlisting}
+class virtual body:
+	float ->
+	float ->
+	object
+		val mutable position : float * float
+		val mutable velocity : float * float
+		val mutable acceleration : float * float
+		method getPosition : float*float
+		method setPosition : float*float -> unit
+		method getAcceleration : float*float
+		method loopBound : float*float -> float*float -> unit
+		method setAcceleration : float*float-> unit
+		method applyAcceleration : float*float -> unit
+		method virtual draw : unit
+		method move : unit
+	end;;
+	\end{lstlisting}
+	\caption{Interface da classe body}
+\end{figure}
+	
+\subsection{Encapsulamento e proteção dos atributos}
+	Todos os atributos das classes são privados. O encapsulamento de dados pode ser visto através do método move, por exemplo, que esconde o fato de se estar usando três vetores (posição, velocidade e aceleração) para se calcular o movimento da partícula.
+\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+method move =
+	let (px,py) = position in
+	let (vx,vy) = velocity in
+	let (ax,ay) = acceleration in
+	position <- (px +. vx,py +. vy);
+	velocity <- (vx +. ax,vy +. ay);
+	acceleration <- (0.0,0.0)
+	\end{lstlisting}
+	\caption{Implementação do método move da classe body}
+\end{figure}
+	
+\subsection{Organização do código em espaços de nome diferenciados}
+	Em OCaml, cada arquivo conta como um espaço diferente, de forma que este deve ser incluído com open ou prefixado com seu nome antes de ser possível usar suas funções.
+	
+\subsection{Mecanismo de Herança}
+	Foram usados três níveis de hierarquia, sendo que body é a superclasse de particle, que por sua vez é superclasse de electric.
+
+	\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+class particle x y =
+	object (self)
+		inherit body x y
+		method draw =
+			GlDraw.begins `points;
+			GlDraw.vertex2 position;
+			GlDraw.ends ()
+	end;;
+	\end{lstlisting}
+	\caption{Implementação da classe particle, mostrando a herança}
+\end{figure}
+
+\subsection{Especificação de uma classe abstrata}
+	A classe body é abstrata por possuir o método draw como virtual.
+
+\subsection{Polimorfismo por inclusão}
+	
+\subsection{Polimorfismo paramétrico}
+	\subsubsection{Especificação de algoritmo utilizando o recurso}
+	
+	\subsubsection{Especificação de estrutura de dados genérica}
+	
+\subsection{Polimorfismo por sobrecarga}
+	
+	OCaml não suporta polimorfismo por sobrecarga. Isso está relacionado com o mecanismo de inferência de tipos, que seria muito mais complicado de se implementar (talvez até impossível para qualquer caso). No entanto, a linguagem permite a criação de funções que recebem parâmetros de tipos arbitrários (como, por exemplo, map), mas a implementação é a mesma para todos os tipos.
+
+\subsection{Especificação e uso de funções como elementos de primeira ordem}
+	
+	Para carregar as partículas de um arquivo, foi feita uma função para ler as linhas de um canal, que foi passada como argumento para a função parseChannel.
+	
+	\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+let readLine chan =
+	let rec readLineAux acc =
+		let c =
+			try
+				input_char chan
+			with
+				End_of_file -> if String.length acc = 0 then raise End_of_file else '\n'
+		in
+		match c with
+		 '\n' -> acc
+		|'\r' -> acc
+		| _ -> (readLineAux (acc ^ (String.make 1 c)) )
+	in
+		readLineAux ""
+		
+let loadConfig filename =
+	let chan = open_in_bin filename in
+	let lines = parseChannel chan readLine in
+	\end{lstlisting}
+	\caption{Função que lê uma linha de um arquivo e trecho de uma função que carrega o arquivo de configuração}
+\end{figure}
+	
+\subsection{Especificação e uso de funções de ordem maior}
+
+Foi feita uma função que lê o conteúdo de um arquivo, sendo que um de seus parâmetros é uma função que recebe um canal e retorna um elemento.
+
+\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+let rec parseChannel chan readElement =
+	try
+		let el = readElement chan in
+		el::(parseChannel chan readElement)
+	with
+		End_of_file -> []
+	\end{lstlisting}
+	\caption{Função que lê o conteúdo de um arquivo}
+\end{figure}
+	
+\subsubsection{Currying}
+	
+	Foi usado currying para a função de callback de display da glut. Como essa deve ser do tipo unit, mas queríamos uma que recebesse uma lista de pontos, simplesmente aplicamos display a dots, produzindo, assim, uma função do tipo unit, mesmo que display recebesse um argumento.
+	
+	\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+let display dots ()=
+	GlClear.clear [ `color ];
+	drawDots !dots;
+	Glut.swapBuffers ()
+	
+let _ = 
+	ignore (Glut.init Sys.argv);
+	Glut.initDisplayMode ~double_buffer:true ();
+	ignore (Glut.createWindow ~title:"Simparticle");
+
+	Glut.displayFunc ~cb:(display dots);
+	Glut.reshapeFunc ~cb:reshape;
+	Glut.mouseFunc ~cb:mouseHandler;
+	Glut.timerFunc ~ms:mili ~cb:timerF ~value:1;
+	Glut.mainLoop()
+	\end{lstlisting}
+	\caption{Funções display e main do programa}
+\end{figure}
+	
+\subsection{Pattern Matching}
+
+Diversas funções feitas usaram pattern matching. A versão sem pattern matching das mesmas seria mais longa e menos legível. No exemplo abaixo, são feitas duas operações no pattern matching: primeiro compara-se a cabeça da lista com "eletric" e atribui-se o resto da lista para rest.
+
+\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+let readParticleCategory lst = match lst with
+	 "electric"::rest -> readElectricCategory rest
+	| _ -> raise Invalid_format
+	\end{lstlisting}
+	\caption{Função que usa pattern matching}
+\end{figure}
+
+\subsection{Recursão como mecanismo de iteração}
+
+\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+let readParticleCategory lst = match lst with
+	 "electric"::rest -> readElectricCategory rest
+	| _ -> raise Invalid_format
+	\end{lstlisting}
+	\caption{Função que usa pattern matching}
+\end{figure}
+	
+\subsection{Delegates}
+	
+	Como OCaml suporta funções como elementos de primeira ordem, delegates se tornam completamente desnecessários, uma vez que são apenas uma forma de se passar métodos como argumento para alguma classe em paradigmas orientados a objeto. Como é possível passar a função diretamente, OCaml não possui sintaxe para delegates.
+	
+\begin{itemize}  
+ \item Uso de lista para manipulação de estruturas em funções de ordem maior (as funções devem ser puras)
+ \item Uso de funções lambda
+		{\color{notDone}
+		\begin{enumerate}
+			\item Poderia ser usado em uma função que aplica atrito (Physics.ml)
+		\end{enumerate}
+		}
+
+\end{itemize}
+\end{document}

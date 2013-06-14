@@ -1,4 +1,4 @@
-open Body;;
+include Body;;
 
 class particle x y =
 	object (self)
