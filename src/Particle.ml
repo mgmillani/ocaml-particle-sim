@@ -14,7 +14,7 @@ class electric x y charge_init =
 	object (self)
 		inherit particle x y
 		val mutable charge = charge_init
-		val mutable dotColor = (1.0, 0.0, 0.0)
+		val mutable dotColor = (1.0, 0.7, 0.2)
 		method draw =
 			GlDraw.begins `points;
 			GlDraw.color dotColor;

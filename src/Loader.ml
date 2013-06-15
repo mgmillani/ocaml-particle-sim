@@ -20,42 +20,48 @@ let readLine chan =
 		match c with
 		 '\n' -> acc
 		|'\r' -> acc
+		|' ' -> if String.length acc = 0 then readLineAux acc else acc
+		|'\t' -> if String.length acc = 0 then readLineAux acc else acc
 		| _ -> (readLineAux (acc ^ (String.make 1 c)) )
 	in
 		readLineAux ""
 
-let readElectricCategory lst =
-	let rec readAux lst =
-
+let readElectricParticle lst =
+	let rec readAux x y charge lst = match lst with
+		 "x"::"="::value::rest -> readAux (fun k -> float_of_string value) y charge rest
+		|"y"::"="::value::rest -> readAux x (fun k -> float_of_string value) charge rest
+		|"charge"::"="::value::rest -> readAux x y (fun k -> float_of_string value) rest
+		| h::r -> (new electric (x 0) (y 0) (charge 0) , r)
+		| _ -> (new electric (x 0) (y 0) (charge 0) , lst)
 	in
-	let (x,y,charge) = readAux lst in
-	fun => new particle x y charge
-
+		readAux (fun x -> raise Invalid_format) (fun x -> raise Invalid_format) (fun x -> raise Invalid_format) lst
 
 let readParticleCategory lst = match lst with
-	 "electric"::rest -> readElectricCategory rest
+	 "electric"::rest -> (readElectricParticle,rest)
 	| _ -> raise Invalid_format
 
-let parseList readCategory readElement lst =
-	let rec parseListAux constructor readCategory readElement lst =
+let parseList readCategory lst =
+	let rec parseListAux readElement readCategory lst =
 		match lst with
 		[] -> []
 		| _ ->
 			try
-				let (nextConstructor,rest) = readCategory lst in
-				parseListAux nextConstructor readCategory readElement rest
+				let (readElement2,rest) = readCategory lst in
+				parseListAux readElement2 readCategory rest
 			with
 				Invalid_format ->
-					let (el,rest) = readElement constructor lst in
-					el :: (parseListAux constructor readCategory readElement rest)
+					try
+						let (el,rest) = readElement lst in
+						el :: (parseListAux readElement readCategory rest)
+					with
+						Invalid_format -> []
 	in
-		let (nextConstructor,rest) = readCategory lst in
-		parseListAux nextConstructor readCategory readElement rest
+		let (readElement2,rest) = readCategory lst in
+		parseListAux readElement2 readCategory rest
 
-let loadConfig filename =
+let loadConfig filename categoryFunc =
 	let chan = open_in_bin filename in
 	let lines = parseChannel chan readLine in
-	(*parseList categoryFunc elementFunc characters*)
-	List.iter (Printf.printf "%s\n") lines
+	parseList categoryFunc lines
 
 

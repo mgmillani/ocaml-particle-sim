@@ -1,4 +1,5 @@
 open Particle;;
+open Loader;;
 
 (* quantos milisegundos dura cada frame*)
 let mili = 15
@@ -25,6 +26,7 @@ let rec drawDots points = match points with
 	atualiza o desenho
 *)
 let display dots ()=
+	GlClear.color (0.0, 0.0, 0.0);
 	GlClear.clear [ `color ];
 	drawDots !dots;
 	Glut.swapBuffers ()
@@ -60,9 +62,9 @@ let mouseHandler ~button ~state ~x ~y =
 
 let _ =
 
-	(*dots := Loader.loadConfig "config"*)
-	Loader.loadConfig "config"
-	(*
+	dots := Loader.loadConfig "config" readParticleCategory;
+	Printf.printf "Number of particles: %d\n" (List.length !dots);
+
 	ignore (Glut.init Sys.argv);
 	Glut.initDisplayMode ~double_buffer:true ();
 	ignore (Glut.createWindow ~title:"Simparticle");
@@ -73,4 +75,3 @@ let _ =
 	(*Glut.idleFunc ~cb:(Some idle);*)
 	Glut.timerFunc ~ms:mili ~cb:timerF ~value:1;
 	Glut.mainLoop()
-	*)
