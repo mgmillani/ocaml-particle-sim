@@ -5,7 +5,7 @@ OBJ = obj
 INCLUDE = include
 INC = -I +lablGL -I $(INCLUDE) -I $(OBJ)
 LIBS = lablglut.cmxa lablgl.cmxa
-OBJECTS = $(OBJ)/Body.cmx $(OBJ)/Particle.cmx $(OBJ)/Physics.cmx $(OBJ)/Loader.cmx $(OBJ)/main.cmx
+OBJECTS = $(OBJ)/Body.cmx $(OBJ)/Particle.cmx $(OBJ)/Physics.cmx $(OBJ)/Loader.cmx $(OBJ)/Quadtree.cmx $(OBJ)/main.cmx
 INTERFACES = $(OBJ)/Body.cmi $(OBJ)/Particle.cmi $(OBJ)/Physics.cmi
 NAME = particle
 

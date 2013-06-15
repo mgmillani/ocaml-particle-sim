@@ -1,5 +1,6 @@
 open Particle;;
 open Loader;;
+open Quadtree;;
 
 (* quantos milisegundos dura cada frame*)
 let mili = 15
@@ -9,10 +10,7 @@ let miny = ~-. 0.5
 let maxx = 0.5
 let maxy = 0.5
 
-(*posicao inicial dos pontos*)
-(*let dots = ref [new electric 0.4 0.7 ~-. 0.0003 ; new electric minx miny 0.0005 ; new electric maxx miny 0.0009 ; new electric maxx maxy ~-. 0.0001 ; new electric minx maxy ~-. 0.0007 ; new electric 0.5 0.5 0.0002 ]*)
-
-let dots = ref [new electric 0.4 0.7 ~-. 0.0003 ; new electric 0.5 0.2 0.0005]
+let dots = ref []
 
 (*
 	desenha cada ponto em sua posicao
