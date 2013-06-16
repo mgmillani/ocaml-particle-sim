@@ -11,22 +11,33 @@ let maxx = 0.5
 let maxy = 0.5
 
 let dots = ref []
+let circles = ref []
+
+let drawTree = ref false;;
 
 (*
 	desenha cada ponto em sua posicao
 *)
-let rec drawDots points = match points with
+let rec drawBodies points = match points with
   | h::r -> h#draw;
-						drawDots r;
+						drawBodies r;
 	| [] -> ()
 
 (*
 	atualiza o desenho
 *)
-let display dots ()=
+let display dots circles ()=
 	GlClear.color (0.0, 0.0, 0.0);
 	GlClear.clear [ `color ];
-	drawDots !dots;
+	drawBodies !dots;
+	drawBodies !circles;
+	if !drawTree then
+		let dTree = Quadtree.buildQuadtree !dots in
+		let cTree = Quadtree.buildQuadtree !circles in
+		Quadtree.draw dTree;
+		Quadtree.draw cTree;
+	else
+		();
 	Glut.swapBuffers ()
 
 let reshape ~w ~h =
@@ -51,25 +62,31 @@ let mouseHandler ~button ~state ~x ~y =
 		let py = ry *. ~-. 2.0 +. 1.0 in
 		if state = Glut.DOWN then
 			if button = Glut.LEFT_BUTTON then
-				dots := ( new electric px py 0.004 ) :: !dots
+				dots := ( new electric px py 0.0004 ) :: !dots
 			else
 				dots := ( new electric px py ~-. 0.0004 ) :: !dots
 		; ()
+let keyhandler ~key ~(x : int) ~(y : int) =
+	if key = (int_of_char 'd') then
+		drawTree := not !drawTree
+	else ()
 
 (*let idle () =*)
 
 let _ =
 
-	dots := Loader.loadConfig "config" readParticleCategory;
-	Printf.printf "Number of particles: %d\n" (List.length !dots);
+	let (elec,massive) =  Loader.loadBodies "config" in
+	dots := elec;
+	circles := massive;
 
 	ignore (Glut.init Sys.argv);
 	Glut.initDisplayMode ~double_buffer:true ();
 	ignore (Glut.createWindow ~title:"Simparticle");
 
-	Glut.displayFunc ~cb:(display dots);
+	Glut.displayFunc ~cb:(display dots circles);
 	Glut.reshapeFunc ~cb:reshape;
 	Glut.mouseFunc ~cb:mouseHandler;
+	Glut.keyboardFunc ~cb:keyhandler;
 	(*Glut.idleFunc ~cb:(Some idle);*)
 	Glut.timerFunc ~ms:mili ~cb:timerF ~value:1;
 	Glut.mainLoop()

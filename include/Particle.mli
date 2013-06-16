@@ -14,7 +14,6 @@ class electric :
 		val charge : float
 		val mutable position : float * float
 		val mutable velocity : float * float
-		method draw : unit
 		method getAcceleration : float * float
 		method getCharge : float
 		method discharge : unit

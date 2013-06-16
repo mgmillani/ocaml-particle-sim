@@ -26,18 +26,30 @@
 
 \begin{itemize}
  \item Definição e uso de classes
-		{\color{notDone}
+		{\color{done}
 		\begin{enumerate}
 			\item Particle (Particle.ml)
-			\item 
+			\item Electric (Particle.ml)
+			\item Body (Body.ml)
 		\end{enumerate}
 		}
  \item Encapsulamento e proteção dos atributos
+	{\color{done}
+		\begin{enumerate}
+			\item Todos os atributos são privados
+			\item métodos como move e force mostram o encapsulamento
+		\end{enumerate}
+		}
  \item Organização do código em espaços de nome diferenciados
+	{\color{done}
+		\begin{enumerate}
+			\item Para se usar os módulos, é necessário ou prefixar as funções com o nome deles ou usar open
+		\end{enumerate}
+		}
  \item Mecanismo de herança:
 	\begin{itemize}
 	 \item especificação de 3 níveis de hierarquia
-		{\color{notDone}
+		{\color{done}
 		\begin{enumerate}
 			\item Body (Body.ml)
 			\item Particle (Particle.ml)
@@ -45,7 +57,7 @@
 		\end{enumerate}
 		}
 	 \item especificação de uma classe abstrata
-		{\color{notDone}
+		{\color{done}
 		\begin{enumerate}
 			\item Body (Body.ml)
 		\end{enumerate}
@@ -55,32 +67,50 @@
  \item Polimorfismo paramétrico
 	\begin{itemize}
 	 \item especificação de algoritmo utilizando o recurso
-	 \item especificação de estrutura de dados genérica
-	 {\color{notDone}
+	 {\color{done}
 		\begin{enumerate}
-			\item Árvore para o algoritmo de Barnes-Hut (\url{http://en.wikipedia.org/wiki/Barnes-Hut})
+			\item buildQuadtree (Quadtree.ml)
+		\end{enumerate}
+		}
+	 \item especificação de estrutura de dados genérica
+	 {\color{done}
+		\begin{enumerate}
+			\item tipo quadtree (Quadtree.ml)
 		\end{enumerate}
 		}
 	\end{itemize}
  \item Polimorfismo por sobrecarga
- \item Especificação e uso de funções como elementos de primeira ordem
- \item Especificação e uso de funções de ordem maior
- {\color{notDone}
+		{\color{notDone}
 		\begin{enumerate}
-			\item Body (Body.ml)
+			\item Ocaml não suporta polimorfismo por sobrecarga
+		\end{enumerate}
+		}
+ \item Especificação e uso de funções como elementos de primeira ordem		
+		{\color{done}
+		\begin{enumerate}
+			\item readParticles (Loader.ml)
+		\end{enumerate}
+		}
+ \item Especificação e uso de funções de ordem maior
+		{\color{done}
+		\begin{enumerate}
+			\item loadConfig (Loader.ml)
+			\item parseChannel (Loader.ml)
 		\end{enumerate}
 		}
  \item Uso de lista para manipulação de estruturas em funções de ordem maior (as funções devem ser puras)
  \item Uso de funções lambda
-		{\color{notDone}
+		{\color{done}
 		\begin{enumerate}
-			\item Poderia ser usado em uma função que aplica atrito (Physics.ml)
+			\item readElectricParticle (Loader.ml)
+			\item buildQuadtree (Quadtree.ml)
 		\end{enumerate}
 		}
  \item Currying
 		{\color{done}
 		\begin{enumerate}
 			\item display (main.ml)
+			\item buildQuadtree (main.ml)
 		\end{enumerate}
 		}
  \item Pattern matching
@@ -98,7 +128,6 @@
 		\end{enumerate}
 		}
  \item Delegates
-
 
 \end{itemize}
 \end{document}

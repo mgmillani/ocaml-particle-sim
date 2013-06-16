@@ -1,3 +1,5 @@
+open Body;;
+open Massive;;
 open Particle;;
 
 exception Invalid_format
@@ -15,7 +17,10 @@ let readLine chan =
 			try
 				input_char chan
 			with
-				End_of_file -> if String.length acc = 0 then raise End_of_file else '\n'
+				End_of_file ->
+					if String.length acc = 0 then
+						raise End_of_file
+					else '\n'
 		in
 		match c with
 		 '\n' -> acc
@@ -28,16 +33,29 @@ let readLine chan =
 
 let readElectricParticle lst =
 	let rec readAux x y charge lst = match lst with
-		 "x"::"="::value::rest -> readAux (fun k -> float_of_string value) y charge rest
+		|"x"::"="::value::rest -> readAux (fun k -> float_of_string value) y charge rest
 		|"y"::"="::value::rest -> readAux x (fun k -> float_of_string value) charge rest
 		|"charge"::"="::value::rest -> readAux x y (fun k -> float_of_string value) rest
-		| h::r -> (new electric (x 0) (y 0) (charge 0) , r)
-		| _ -> (new electric (x 0) (y 0) (charge 0) , lst)
+		|"end"::r -> (Electric ((x 0),(y 0),(charge 0)) , r)
+		| _ -> (Electric ((x 0),(y 0),(charge 0)) , lst)
 	in
-		readAux (fun x -> raise Invalid_format) (fun x -> raise Invalid_format) (fun x -> raise Invalid_format) lst
+		let none = (fun x -> raise Invalid_format) in
+		readAux none none none lst
 
-let readParticleCategory lst = match lst with
-	 "electric"::rest -> (readElectricParticle,rest)
+let readMassiveParticle lst =
+	let rec readAux x y mass lst = match lst with
+		|"x"::"="::value::rest -> readAux (fun k -> float_of_string value) y mass rest
+		|"y"::"="::value::rest -> readAux x (fun k -> float_of_string value) mass rest
+		|"mass"::"="::value::rest -> readAux x y (fun k -> float_of_string value) rest
+		|"end"::r -> (Massive ((x 0),(y 0),(mass 0)) , r)
+		| _ -> (Massive ((x 0),(y 0),(mass 0)) , lst)
+	in
+		let none = (fun x -> raise Invalid_format) in
+		readAux none none none lst
+
+let readBodyCategory lst = match lst with
+	| "electric"::rest -> (readElectricParticle,rest)
+	| "massive"::rest -> (readMassiveParticle,rest)
 	| _ -> raise Invalid_format
 
 let parseList readCategory lst =
@@ -59,9 +77,22 @@ let parseList readCategory lst =
 		let (readElement2,rest) = readCategory lst in
 		parseListAux readElement2 readCategory rest
 
+let constructBodies lst =
+	let rec constructAux lst elec massive = match lst with
+		| Electric (x,y,charge)::rest -> constructAux rest ((new electric x y charge)::elec) massive
+		| Massive (x,y,mass)::rest -> constructAux rest elec ((new massive x y mass)::massive)
+		| _ -> (elec,massive)
+	in
+		constructAux lst [] []
+
+
 let loadConfig filename categoryFunc =
 	let chan = open_in_bin filename in
 	let lines = parseChannel chan readLine in
 	parseList categoryFunc lines
+
+let loadBodies filename =
+	let data = loadConfig filename readBodyCategory in
+	constructBodies data
 
 

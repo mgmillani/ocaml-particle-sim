@@ -142,9 +142,21 @@ class particle x y =
 \subsection{Polimorfismo por inclusão}
 	
 \subsection{Polimorfismo paramétrico}
-	\subsubsection{Especificação de algoritmo utilizando o recurso}
 	
-	\subsubsection{Especificação de estrutura de dados genérica}
+		Foi usada uma quadtree para a simulação das interações entre as partículas. A definição da estrutura é válida para qualquer tipo de dado, mas apenas um de cada vez, isto é, podemos ter uma árvore de inteiros, de partículas, etc... mas não podemos misturar floats e ints na mesma árvore.
+		
+		Como OCaml usa inferência de tipos, o tipo da árvore não precisa estar explícito no código.
+		
+	\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+type 'a quadtree =
+| Empty
+| Leaf of 'a
+| Node of 'a quadtree*'a quadtree*'a quadtree*'a quadtree;;
+	\end{lstlisting}
+	\caption{Descrição da estrutura de uma quadtree. ????? indica o tipo parametrizado }
+	\end{figure}
 	
 \subsection{Polimorfismo por sobrecarga}
 	
@@ -163,20 +175,28 @@ let readLine chan =
 			try
 				input_char chan
 			with
-				End_of_file -> if String.length acc = 0 then raise End_of_file else '\n'
+				End_of_file ->
+				if String.length acc = 0 then
+					raise End_of_file
+				else '\n'
 		in
 		match c with
 		 '\n' -> acc
 		|'\r' -> acc
+		|' ' ->
+			if String.length acc = 0 then readLineAux acc else acc
+		|'\t' ->
+			if String.length acc = 0 then readLineAux acc else acc
 		| _ -> (readLineAux (acc ^ (String.make 1 c)) )
 	in
 		readLineAux ""
 		
-let loadConfig filename =
+let loadConfig filename categoryFunc =
 	let chan = open_in_bin filename in
 	let lines = parseChannel chan readLine in
+	parseList categoryFunc lines
 	\end{lstlisting}
-	\caption{Função que lê uma linha de um arquivo e trecho de uma função que carrega o arquivo de configuração}
+	\caption{Função que lê uma linha de um arquivo e outra que carrega o arquivo de configuração}
 \end{figure}
 	
 \subsection{Especificação e uso de funções de ordem maior}
@@ -224,14 +244,24 @@ let _ =
 	
 \subsection{Pattern Matching}
 
-Diversas funções feitas usaram pattern matching. A versão sem pattern matching das mesmas seria mais longa e menos legível. No exemplo abaixo, são feitas duas operações no pattern matching: primeiro compara-se a cabeça da lista com "eletric" e atribui-se o resto da lista para rest.
+Diversas funções feitas usaram pattern matching. A versão sem pattern matching das mesmas seria mais longa e menos legível. No exemplo abaixo, seria necessário fazer ifs possivelmente longos ou criar uma máquina de estados para se obter o mesmo comportamento.
 
 \begin{figure}[H]
 	\centering	
 	\begin{lstlisting}
-let readParticleCategory lst = match lst with
-	 "electric"::rest -> readElectricCategory rest
-	| _ -> raise Invalid_format
+let readElectricParticle lst =
+	let rec readAux x y charge lst = match lst with
+		 "x"::"="::value::rest -> 
+			readAux (fun k -> float_of_string value) y charge rest
+		|"y"::"="::value::rest -> 
+			readAux x (fun k -> float_of_string value) charge rest
+		|"charge"::"="::value::rest ->
+			readAux x y (fun k -> float_of_string value) rest
+		| h::r -> (new electric (x 0) (y 0) (charge 0) , r)
+		| _ -> (new electric (x 0) (y 0) (charge 0) , lst)
+	in
+		let none = (fun x -> raise Invalid_format) in
+		readAux none none none lst
 	\end{lstlisting}
 	\caption{Função que usa pattern matching}
 \end{figure}
@@ -241,11 +271,12 @@ let readParticleCategory lst = match lst with
 \begin{figure}[H]
 	\centering	
 	\begin{lstlisting}
-let readParticleCategory lst = match lst with
-	 "electric"::rest -> readElectricCategory rest
-	| _ -> raise Invalid_format
+let rec drawDots points = match points with
+  | h::r -> h#draw;
+						drawDots r;
+	| [] -> ()
 	\end{lstlisting}
-	\caption{Função que usa pattern matching}
+	\caption{Função para desenhar uma lista de pontos na tela}
 \end{figure}
 	
 \subsection{Delegates}
@@ -253,13 +284,15 @@ let readParticleCategory lst = match lst with
 	Como OCaml suporta funções como elementos de primeira ordem, delegates se tornam completamente desnecessários, uma vez que são apenas uma forma de se passar métodos como argumento para alguma classe em paradigmas orientados a objeto. Como é possível passar a função diretamente, OCaml não possui sintaxe para delegates.
 	
 \begin{itemize}  
- \item Uso de lista para manipulação de estruturas em funções de ordem maior (as funções devem ser puras)
- \item Uso de funções lambda
-		{\color{notDone}
-		\begin{enumerate}
-			\item Poderia ser usado em uma função que aplica atrito (Physics.ml)
-		\end{enumerate}
-		}
+ \item Uso de lista para manipulação de estruturas em funções de ordem maior (as funções devem ser puras) 
 
 \end{itemize}
+
+\begin{thebibliography}{4}
+ \bibitem{BarnesHut}\url{http://en.wikipedia.org/wiki/Barnes-Hut\_simulation}
+ \bibitem{OCamlLibRef}\url{http://caml.inria.fr/pub/docs/manual-ocaml/libref/}
+ 
+\end{thebibliography}
+
+
 \end{document}

@@ -1,10 +1,12 @@
 open Body;;
 
-class particle x y =
+class virtual particle x y =
 	object (self)
 		inherit body x y
+		val mutable dotColor = (1.0, 0.7, 0.2)
 		method draw =
 			GlDraw.begins `points;
+			GlDraw.color dotColor;
 			GlDraw.vertex2 position;
 			GlDraw.ends ()
 	end;;
@@ -14,12 +16,7 @@ class electric x y charge_init =
 	object (self)
 		inherit particle x y
 		val mutable charge = charge_init
-		val mutable dotColor = (1.0, 0.7, 0.2)
-		method draw =
-			GlDraw.begins `points;
-			GlDraw.color dotColor;
-			GlDraw.vertex2 position;
-			GlDraw.ends ()
+		method getValue = charge
 		method getCharge = charge
 		method transfer other_charge = charge <- (charge +. other_charge) /. 2.0
 		method getForce (otherParticle : electric) =

@@ -17,6 +17,7 @@ class virtual body x y =
 			let (ax,ay) = acceleration in
 			acceleration <- (ax +. x , ay +. y)
 		method virtual draw : unit
+		method virtual getValue : float
 		(* aplica a aceleracao e a velocidade *)
 		method move =
 			let (px,py) = position in
@@ -26,3 +27,7 @@ class virtual body x y =
 			velocity <- (vx +. ax,vy +. ay);
 			acceleration <- (0.0,0.0)
 	end;;
+
+type bodyData =
+	| Electric of float*float*float
+	| Massive of float*float*float;;
