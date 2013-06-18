@@ -51,7 +51,7 @@
 \maketitle
 
 \begin{abstract}
- Este trabalho implementa um simulador de partículas elétricas em OCaml.
+ Este trabalho implementa um simulador de partículas elétricas e de corpos massivos em OCaml.
 \end{abstract}
 
 \section{Descrição do problema}
@@ -140,6 +140,8 @@ class particle x y =
 	A classe body é abstrata por possuir o método draw como virtual.
 
 \subsection{Polimorfismo por inclusão}
+	
+	Usamos polimorfismo por inclusão para desenhar os corpos. Partículas elétricas possuem uma função de desenho diferente de partículas massivas
 	
 \subsection{Polimorfismo paramétrico}
 	
@@ -266,6 +268,8 @@ let readElectricParticle lst =
 	\caption{Função que usa pattern matching}
 \end{figure}
 
+	Para uma análise mais detalhada desda função, ver Figura \ref{readElectricParticle}.
+
 \subsection{Recursão como mecanismo de iteração}
 
 \begin{figure}[H]
@@ -288,6 +292,126 @@ let rec drawDots points = match points with
 
 \end{itemize}
 
+\section{Análise da Linguagem}
+
+\begin{table}[H]
+ \begin{tabular}{c | c}
+  \hline
+  característica & nota \\
+  \hline
+  simplicidade & 8/10\\
+  ortogonalidade & 5/10\\
+  expressividade & 8/10\\  
+  estruturas de controle & 10/10\\
+  mecanismos de definição de tipos & 10/10\\
+  abstração de dados e processos & 10/10\\
+  modelo de tipos & 8/10\\
+  portabilidade & 7/10\\
+  reusabilidade & 8/10\\
+  suporte e documentação & 4/10\\
+  tamanho do código & 9/10\\
+  generalidade & 9/10\\
+  eficiência e custo & 10/10\\
+  \hline
+ \end{tabular}
+	\caption{Notas das características da linguagem segundo a opinião do grupo}
+\end{table}
+
+	\subsection{Simplicidade}
+		Graças ao sistema de inferência de tipos e ao pattern matching, a declaração de funções e o uso de tipos de dados se torna bastante simples para o programador.
+		
+		No entanto, a necessidade de se usar operadores aritméticos diferentes para tipos diferentes, o uso de let rec para funções recursivas e a ausência de coerção implícita torna a linguagem mais complicada de se usar em alguns casos como, por exemplo, ao misturarmos números inteiros e flutuantes na mesma expressão.
+		
+		Na seguinte função, podemos notar diversos aspectos da linguage:
+		\begin{figure}
+\begin{lstlisting}
+let readElectricParticle lst =
+	let rec readAux x y charge lst = match lst with
+		 "x"::"="::value::rest -> 
+			readAux (fun k -> float_of_string value) y charge rest
+		|"y"::"="::value::rest -> 
+			readAux x (fun k -> float_of_string value) charge rest
+		|"charge"::"="::value::rest ->
+			readAux x y (fun k -> float_of_string value) rest
+		| h::r -> (new electric (x 0) (y 0) (charge 0) , r)
+		| _ -> (new electric (x 0) (y 0) (charge 0) , lst)
+	in
+		let none = (fun x -> raise Invalid_format) in
+		readAux none none none lst
+	\end{lstlisting}
+		\caption{Função que lê os dados de uma partícula elétrica}
+		\label{readElectricParticle}
+		\end{figure}
+		
+		Sem pattern matching, seria necessário fazer diversos if-elses, várias comparações de strings e percorrer a lista manualmente. A outra opção seria fazer um autômato, que também requereria mais código.
+		
+		O uso de funções lambda permitiu que uma exceção fosse gerada somente nos casos em que um dos atributos não fosse inicializado e sem ser necessário usar variáveis auxiliares nem testar o valor dos atributos até então.
+		
+		Podemos ver um caso de recursão como método de iteração, pois estamos percorrendo a lista de palavras do início até acharmos um ``end''. Graças ao pattern matching, a versão recursiva é mais simples que a iterativa por poder consumir diversos elementos de uma só vez sem explicitamente alterar o índice.
+		
+		Se a linguagem usasse coerção implícita de string para float, o código ficaria mais simples pois os casts explícitos desapareceriam.
+		
+	\subsection{Ortogonalidade}
+		O pattern matching permite tratar diversos tipos de dados de uma forma similar e bastante expressiva, o que aumenta a ortogonalidade da linguagem. Por outro lado, a necessidade de usarmos operadores diferentes para soma de inteiros e de floats baixa consideravelmente essa característica.
+		
+	\subsection{Expressividade}
+		Novamente por causa de pattern matching e inferência de tipos, a expressividade da linguagem é bastante boa.
+		
+	\subsection{Estruturas de Controle}
+		OCaml conta com os mecanismos de controle de linguagens imperativas, map de linguagens funcionais, um if-then-else que retorna um valor e pattern matching. Praticamente qualquer método de controle de fluxo que conhecemos pode ser usado em OCaml.
+		
+	\subsection{Mecanismos de Definição de Tipos}
+		A linguagem permite a declaração de classes no estilo orientado a objetos, além de um meio de definir estruturas que possuem diversos construtores e registros com campos nomeados. 
+		
+	\subsection{Abstração de Dados e Processos}
+		A expressão let da linguagem permite nomear qualquer expressão válida. Junto com funções lambda e currying, isso permite uma alta abstração de processos, pois podemos encapsular uma função dentro de uma expressão lambda para gerar uma nova função com comportamento específico, por exemplo.
+		
+	\subsection{Modelo de Tipos}
+		
+		
+		
+	\subsection{Portabilidade}
+		
+		Embora a linguagem em si seja portável, é necessário usar o cygwin para compilar algum programa OCaml em plataformas Windows. No entanto, isso é mais uma restrição pela existência de ferramentas e não pela linguagem em si, isto é, um código OCaml feito para Linux deve funcionar perfeitamente bem em qualquer outra plataforma desde que existe um compilador para esta.
+		
+	\subsection{Reusabilidade}
+	
+		A linguagem permite dividir o código em módulos e estes podem ser usados facilmente a partir de outros arquivos. Como as funções são naturalmente polimórficas (usando tipos genéricos), o potencial de reúso é bastante grande. Também possui orientação a objetos, sendo possível estender classes caso a biblioteca não forneça algo completo o suficiente para a aplicação.
+		
+		No entanto, a solução para dependências circulares não é simples, o que dificulta a criação de bibliotecas maiores e, consequentemente, o reúso das mesmas.
+	
+	\subsection{Suporte e Documentação}
+	
+		Existe pouca documentação sobre a linguagem e suas bibliotecas. Em particular, foi necessário olhar as headers da biblioteca lablgl para se saber como usá-la e quais funções existiam pois não havia algum lugar listando-as e explicando-as.
+		
+		Nós encontramos a referência para as funções da biblioteca padrão de OCaml, mas para questões de sintaxe como o uso de classes e a declaração de tipos para funções e para aspectos como compilação a informação era mais escassa, sendo necessário fazer tentativa e erro em alguns casos.
+		
+	\subsection{Tamanho do Código}
+		
+		Graças a inferência de tipos, não é necessário anotar quais são os tipos das variáveis, reduzindo o tamanho do código. Como a linguagem é fortemente tipada, não é necessário fazer verificação de tipos em execução.
+		
+		O pattern matching consegue reduzir consideravelmente a quantidade necessária de código para se fazer algo.
+		
+		Finalmente, características funcionais como funções lambda, currying e a facilidade de se definir funções locais fazem com que o código não precise de linhas ``inúteis'' com atribuições, declarações e variáveis temporárias.
+		
+	\subsection{Generalidade}
+	
+		Por causa de sua eficiência, OCaml pode ser usada para muitas aplicações, mesmo as mais pesadas ou críticas. E como é bastante expressiva, pode também ser usada para escrever aplicações pequenas rapidamente, ainda mais por possuir um interpretador além do compilador, de forma que não é necessário gerar o binário e os objetos intermediários para se executar o programa.
+		
+		Como a linguagem não permite um controle tão preciso de ponteiros como C, não seria muito adequada para um sistema operacional. Por outro lado, é possível usar bibliotecas escritas e C junto com OCaml, viabilizando a criação de projetos híbridos.
+	
+	\subsection{Eficiência e Custo}
+	
+		OCaml é uma linguagem compilada com tipagem forte e estática. Além disso, permite o uso de referências a memória. O compilador é bom o suficiente para produzir código com eficiência próxima de linguagens como C++.
+	
+\section{Conclusões}
+
+	A primeira dificuldade que encontramos foi aprender a linguagem, pois nunca havíamos usado OCaml antes e a documentação dela não é muito abundante. Felizmente a linguagem é bastante parecida com ML e Haskell, fazendo com que o estilo da sintaxe em si não parecesse estranho, mas detalhes foram um pouco complicados de se encontrar.
+	
+	O fato de a linguagem ser funcional facilitou bastante o uso da Quadtree por ser um estrutura naturalmente recursiva. Junto com pattern matching, cálculo lambda e a existência de múltiplos construtores para a mesma estrutura, essa função se tornou bem mais simples do que o equivalente em outras linguagens.
+	
+	A leitura do arquivo para carregar os corpos também foi bastante simples graças a pattern matching e aos tipos estruturados, pois foi possível separar em casos algo que seria transformado em um autômato para fazer o parsing.
+	
 \begin{thebibliography}{4}
  \bibitem{BarnesHut}\url{http://en.wikipedia.org/wiki/Barnes-Hut\_simulation}
  \bibitem{OCamlLibRef}\url{http://caml.inria.fr/pub/docs/manual-ocaml/libref/}
