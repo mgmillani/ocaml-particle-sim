@@ -85,7 +85,11 @@ let constructBodies lst =
 	in
 		constructAux lst [] []
 
-
+let rec changeValue f lst = match lst with
+	| Electric (x,y,charge)::rest -> (Electric (x,y,f charge))::(changeValue f rest)
+	| Massive (x,y,mass)::rest -> (Massive (x,y,f mass))::(changeValue f rest)
+	| _ -> []
+		
 let loadConfig filename categoryFunc =
 	let chan = open_in_bin filename in
 	let lines = parseChannel chan readLine in
@@ -93,6 +97,6 @@ let loadConfig filename categoryFunc =
 
 let loadBodies filename =
 	let data = loadConfig filename readBodyCategory in
-	constructBodies data
+	constructBodies (changeValue (fun x -> x*.1.1) data)
 
 

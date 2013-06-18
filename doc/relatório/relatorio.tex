@@ -40,7 +40,7 @@
 	literate={ê}{{\^e}}1 {ç}{{\c{c}}}1 {ã}{{\~a}}1 {â}{{\^a}}1 {õ}{{\~o}}1 {í}{{\'i}}1 {é}{{\'e}}1 {á}{{\'a}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
 }
 
-\title{Objetivos Atingidos}
+\title{Relatório do Simparticle}
 \author{Aline \and Marcelo Garlet Millani}
 
 \definecolor{notDone}{RGB}{240,30,5}
@@ -56,7 +56,7 @@
 
 \section{Descrição do problema}
 
-	O problema consiste em, dado um conjunto de partículas, similar as forças de atração elétrica entre elas, desenhando-as conforme se movem.
+	O problema consiste em, dado um conjunto de partículas, similar as forças de atração e repulsão entre elas, desenhando-as conforme se movem. É feita a simulação somente das partículas elétricas usando um algoritmo de complexidade $n^2$, embora a estrutura para o algoritmo de Barnes-Hut ($n log n$) esteja implementada. Essa estrutura acabou não sendo usada por falta de tempo.
 	
 	Para desenhar numa janela, usamos as bibliotecas lablgl e lablglut, que são, respectivamente, implementações de OpenGl e GLUT para OCaml.
 	
@@ -75,7 +75,7 @@
 \section{Implementação}
 
 \subsection{Definição e uso de classes}
-	Foram criadas 3 classes: Body, Particle e Electric, sendo Body abstrata.
+	Foram criadas 4 classes: Body, Massive, Particle e Electric, sendo Body abstrata.
 	\begin{figure}[H]
 	\centering	
 \begin{lstlisting}
@@ -95,8 +95,8 @@ class virtual body:
 		method virtual draw : unit
 		method move : unit
 	end;;
-	\end{lstlisting}
-	\caption{Interface da classe body}
+	\end{lstlisting}	
+	\caption{Interface da classe body \label{Body}}
 \end{figure}
 	
 \subsection{Encapsulamento e proteção dos atributos}
@@ -137,7 +137,7 @@ class particle x y =
 \end{figure}
 
 \subsection{Especificação de uma classe abstrata}
-	A classe body é abstrata por possuir o método draw como virtual.
+	A classe body é abstrata por possuir o método draw como virtual (ver \autoref{Body}).
 
 \subsection{Polimorfismo por inclusão}
 	
@@ -153,19 +153,42 @@ class particle x y =
 	\centering	
 	\begin{lstlisting}
 type 'a quadtree =
-| Empty
-| Leaf of 'a
-| Node of 'a quadtree*'a quadtree*'a quadtree*'a quadtree;;
+	| Empty
+	| Leaf of float*(float*float)*'a
+	| Node of float*(float*float)*
+		('a quadtree * 'a quadtree * 'a quadtree * 'a quadtree);;
 	\end{lstlisting}
-	\caption{Descrição da estrutura de uma quadtree. ????? indica o tipo parametrizado }
+	\caption{Descrição da estrutura de uma quadtree. 'a indica o tipo parametrizado }
 	\end{figure}
+	
+	Sem a possibilidade de usarmos polimorfismo paramétrico, teríamos ou que fazer uma árvore para cada tipo que será usado ou usar um tipo genérico (como, por exemplo, \textit{void *} em C) e fazer cast para o tipo adequado. Por exemplo, em C, poderíamos usar a seguinte estrutura:
+
+	\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+struct quadtree
+{
+	char type;
+	union data
+	{
+		void *sections[4];
+		void *leaf;
+	}	
+	float value;
+	float position[2];	
+};
+	\end{lstlisting}
+	\caption{Estrutura similar em C }
+	\end{figure}
+	
+	Pode-se ver que a estrutura em C requer maior controle por parte do programador e é mais suscetível a erros.
 	
 \subsection{Polimorfismo por sobrecarga}
 	
 	OCaml não suporta polimorfismo por sobrecarga. Isso está relacionado com o mecanismo de inferência de tipos, que seria muito mais complicado de se implementar (talvez até impossível para qualquer caso). No entanto, a linguagem permite a criação de funções que recebem parâmetros de tipos arbitrários (como, por exemplo, map), mas a implementação é a mesma para todos os tipos.
 
 \subsection{Especificação e uso de funções como elementos de primeira ordem}
-	
+	\label{ElementosPrimeiraOrdem}
 	Para carregar as partículas de um arquivo, foi feita uma função para ler as linhas de um canal, que foi passada como argumento para a função parseChannel.
 	
 	\begin{figure}[H]
@@ -199,6 +222,9 @@ let loadConfig filename categoryFunc =
 	parseList categoryFunc lines
 	\end{lstlisting}
 	\caption{Função que lê uma linha de um arquivo e outra que carrega o arquivo de configuração}
+	
+	Sem funções de ordem maior, poderíamos obter o mesmo comportamento usando delegates ou usando classes e fazendo com que readLine fosse um método que pudesse ser sobrescrito. No entanto, a abordagem funcional é muito mais simples do que essas alternativas.
+	
 \end{figure}
 	
 \subsection{Especificação e uso de funções de ordem maior}
@@ -218,31 +244,46 @@ let rec parseChannel chan readElement =
 	\caption{Função que lê o conteúdo de um arquivo}
 \end{figure}
 	
+	As vantagens dessa técnica foi descrita na \autoref{ElementosPrimeiraOrdem}
+	
 \subsubsection{Currying}
 	
-	Foi usado currying para a função de callback de display da glut. Como essa deve ser do tipo unit, mas queríamos uma que recebesse uma lista de pontos, simplesmente aplicamos display a dots, produzindo, assim, uma função do tipo unit, mesmo que display recebesse um argumento.
+	Foi usado currying para as funções de callback da glut. Como estas recebem somente informações da glut, sem ser possível passar dados do programa, é necessário usar variáveis globais para que elas sejam úteis. O uso de currying permitiu que as variáveis se tornassem locais, pois podíamos definir a função como quiséssemos, contanto que ao passarmos para a glut ela fosse do tipo esperado.
 	
 	\begin{figure}[H]
 	\centering	
 	\begin{lstlisting}
-let display dots ()=
-	GlClear.clear [ `color ];
-	drawDots !dots;
-	Glut.swapBuffers ()
+let rec timerF mili dots ~value =
+	Physics.move !dots;
+	Physics.simulateElectricNaive !dots;
+	Glut.timerFunc ~ms:mili ~cb:(timerF mili dots) ~value:1;
+	Glut.postRedisplay ()
 	
-let _ = 
+let _ =
+
+	let dots = ref [] in
+	let circles = ref [] in
+	let drawTree = ref true in
+	let (elec,massive) =  Loader.loadBodies "config" in
+	dots := elec;
+	circles := massive;
+
 	ignore (Glut.init Sys.argv);
 	Glut.initDisplayMode ~double_buffer:true ();
 	ignore (Glut.createWindow ~title:"Simparticle");
 
-	Glut.displayFunc ~cb:(display dots);
+	Glut.displayFunc ~cb:(display dots circles drawTree);
 	Glut.reshapeFunc ~cb:reshape;
-	Glut.mouseFunc ~cb:mouseHandler;
-	Glut.timerFunc ~ms:mili ~cb:timerF ~value:1;
+	Glut.mouseFunc ~cb:(mouseHandler dots);
+	Glut.keyboardFunc ~cb:(keyhandler drawTree);
+	(*Glut.idleFunc ~cb:(Some idle);*)
+	Glut.timerFunc ~ms:mili ~cb:(timerF mili dots) ~value:1;
 	Glut.mainLoop()
 	\end{lstlisting}
 	\caption{Funções display e main do programa}
 \end{figure}
+
+	Sem currying, só é possível usar as funções de callback da glut com variáveis globais.
 	
 \subsection{Pattern Matching}
 
@@ -253,14 +294,14 @@ Diversas funções feitas usaram pattern matching. A versão sem pattern matchin
 	\begin{lstlisting}
 let readElectricParticle lst =
 	let rec readAux x y charge lst = match lst with
-		 "x"::"="::value::rest -> 
+		|"x"::"="::value::rest ->
 			readAux (fun k -> float_of_string value) y charge rest
-		|"y"::"="::value::rest -> 
+		|"y"::"="::value::rest ->
 			readAux x (fun k -> float_of_string value) charge rest
 		|"charge"::"="::value::rest ->
 			readAux x y (fun k -> float_of_string value) rest
-		| h::r -> (new electric (x 0) (y 0) (charge 0) , r)
-		| _ -> (new electric (x 0) (y 0) (charge 0) , lst)
+		|"end"::r -> (Electric ((x 0),(y 0),(charge 0)) , r)
+		| _ -> (Electric ((x 0),(y 0),(charge 0)) , lst)
 	in
 		let none = (fun x -> raise Invalid_format) in
 		readAux none none none lst
@@ -268,33 +309,58 @@ let readElectricParticle lst =
 	\caption{Função que usa pattern matching}
 \end{figure}
 
-	Para uma análise mais detalhada desda função, ver Figura \ref{readElectricParticle}.
+	Para uma análise mais detalhada desda função, ver \autoref{readElectricParticle}.
 
 \subsection{Recursão como mecanismo de iteração}
 
 \begin{figure}[H]
 	\centering	
 	\begin{lstlisting}
-let rec drawDots points = match points with
+let rec drawBodies points = match points with
   | h::r -> h#draw;
-						drawDots r;
+						drawBodies r;
 	| [] -> ()
 	\end{lstlisting}
 	\caption{Função para desenhar uma lista de pontos na tela}
+\end{figure}
+
+	Em Python, a solução seria:
+	
+	\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+def drawBodies(bodies):
+	for b in bodies:
+		b.draw()	
+	\end{lstlisting}
+	\caption{Equivalente para python}
 \end{figure}
 	
 \subsection{Delegates}
 	
 	Como OCaml suporta funções como elementos de primeira ordem, delegates se tornam completamente desnecessários, uma vez que são apenas uma forma de se passar métodos como argumento para alguma classe em paradigmas orientados a objeto. Como é possível passar a função diretamente, OCaml não possui sintaxe para delegates.
 	
-\begin{itemize}  
- \item Uso de lista para manipulação de estruturas em funções de ordem maior (as funções devem ser puras) 
+\subsection{Uso de lista para manipulação de estruturas em funções de ordem maior}
+	
+		\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+let rec changeValue f lst = match lst with
+	| Electric (x,y,charge)::rest -> (Electric (x,y,f charge))::(changeValue f rest)
+	| Massive (x,y,mass)::rest -> (Massive (x,y,f mass))::(changeValue f rest)
+	| _ -> []
 
-\end{itemize}
+let loadBodies filename =
+	let data = loadConfig filename readBodyCategory in
+	constructBodies (changeValue (fun x -> x*.1.1) data)
+	\end{lstlisting}
+	\caption{Função para carregar os corpos e outra para alterar os valores carregados}
+	\end{figure}
 
 \section{Análise da Linguagem}
 
 \begin{table}[H]
+	\centering
  \begin{tabular}{c | c}
   \hline
   característica & nota \\
@@ -318,12 +384,38 @@ let rec drawDots points = match points with
 \end{table}
 
 	\subsection{Simplicidade}
-		Graças ao sistema de inferência de tipos e ao pattern matching, a declaração de funções e o uso de tipos de dados se torna bastante simples para o programador.
+		Graças ao sistema de inferência de tipos e ao pattern matching, a declaração de funções e o uso de tipos de dados se torna bastante simples para o programador. Além disso, estruturas sintaxes como let podem ser usadas tanto para declarar variáveis como para funções e podem ser usadas em qualquer ponto do código.
 		
-		No entanto, a necessidade de se usar operadores aritméticos diferentes para tipos diferentes, o uso de let rec para funções recursivas e a ausência de coerção implícita torna a linguagem mais complicada de se usar em alguns casos como, por exemplo, ao misturarmos números inteiros e flutuantes na mesma expressão.
+		No entanto, a necessidade de se usar operadores aritméticos diferentes para tipos diferentes, o uso de let rec para funções recursivas e a ausência de coerção implícita torna a linguagem mais complicada de se usar em alguns casos como, por exemplo, ao misturarmos números inteiros e flutuantes na mesma expressão.		
 		
-		Na seguinte função, podemos notar diversos aspectos da linguage:
-		\begin{figure}
+	\subsection{Ortogonalidade}
+		O pattern matching permite tratar diversos tipos de dados de uma forma similar e bastante expressiva, o que aumenta a ortogonalidade da linguagem. Por outro lado, a necessidade de usarmos operadores diferentes para soma de inteiros e de floats baixa consideravelmente essa característica.
+		
+		No trecho abaixo, foi possível tratar diversos construtores diferentes da mesma maneira:
+		\begin{figure}[H]
+		\centering	
+		\begin{lstlisting}
+let treeCenter a b c d =
+	let rec avgAux lst amount accx accy = match lst with
+		| Empty::rest -> avgAux rest amount accx accy
+		| Leaf(_,(x,y),_)::rest ->
+			avgAux rest (amount + 1) (accx +. x) (accy +. y)
+		| Node(_,(x,y),_)::rest ->
+			avgAux rest (amount + 1) (accx +. x) (accy +. y)
+		| _ ->
+			let fAmount = float_of_int amount in
+			(accx /. fAmount, accy /. fAmount)
+	in
+	avgAux (a::b::c::[d]) 0 0.0 0.0
+		\end{lstlisting}
+		\caption{Função que calcula o centro de massa de 4 corpos usada para gerar a Quadtree}
+\end{figure}
+		
+	\subsection{Expressividade}
+		Novamente por causa de pattern matching e inferência de tipos, a expressividade da linguagem é bastante boa.
+		
+		Na seguinte função, podemos notar diversos aspectos da linguagem:
+		\begin{figure}[H]
 \begin{lstlisting}
 let readElectricParticle lst =
 	let rec readAux x y charge lst = match lst with
@@ -347,15 +439,9 @@ let readElectricParticle lst =
 		
 		O uso de funções lambda permitiu que uma exceção fosse gerada somente nos casos em que um dos atributos não fosse inicializado e sem ser necessário usar variáveis auxiliares nem testar o valor dos atributos até então.
 		
-		Podemos ver um caso de recursão como método de iteração, pois estamos percorrendo a lista de palavras do início até acharmos um ``end''. Graças ao pattern matching, a versão recursiva é mais simples que a iterativa por poder consumir diversos elementos de uma só vez sem explicitamente alterar o índice.
+		Podemos ver um caso de recursão como método de iteração, pois estamos percorrendo a lista de palavras do início até acharmos um ``end''. Graças ao pattern matching, a versão recursiva é mais expressiva que a iterativa por poder consumir diversos elementos de uma só vez sem explicitamente alterar o índice.
 		
 		Se a linguagem usasse coerção implícita de string para float, o código ficaria mais simples pois os casts explícitos desapareceriam.
-		
-	\subsection{Ortogonalidade}
-		O pattern matching permite tratar diversos tipos de dados de uma forma similar e bastante expressiva, o que aumenta a ortogonalidade da linguagem. Por outro lado, a necessidade de usarmos operadores diferentes para soma de inteiros e de floats baixa consideravelmente essa característica.
-		
-	\subsection{Expressividade}
-		Novamente por causa de pattern matching e inferência de tipos, a expressividade da linguagem é bastante boa.
 		
 	\subsection{Estruturas de Controle}
 		OCaml conta com os mecanismos de controle de linguagens imperativas, map de linguagens funcionais, um if-then-else que retorna um valor e pattern matching. Praticamente qualquer método de controle de fluxo que conhecemos pode ser usado em OCaml.
@@ -363,12 +449,41 @@ let readElectricParticle lst =
 	\subsection{Mecanismos de Definição de Tipos}
 		A linguagem permite a declaração de classes no estilo orientado a objetos, além de um meio de definir estruturas que possuem diversos construtores e registros com campos nomeados. 
 		
+		Eis um código onde definidos os três tipos de dados:
+		
+		\begin{figure}[H]
+	\begin{lstlisting}
+type 'a quadtree =
+	| Empty
+	| Leaf of float*(float*float)*'a
+	| Node of float*(float*float)*
+		('a quadtree * 'a quadtree * 'a quadtree * 'a quadtree);;
+
+type 'a registro = {codigo : int ; valor : 'a};;
+	
+class virtual particle x y =
+	object (self)
+		inherit body x y
+		val mutable dotColor = (1.0, 0.7, 0.2)
+		method draw =
+			GlDraw.begins `points;
+			GlDraw.color dotColor;
+			GlDraw.vertex2 position;
+			GlDraw.ends ()
+	end;;
+
+	\end{lstlisting}
+		\caption{Exemplos de classes, estruturas e registros}
+		\end{figure}
+		
 	\subsection{Abstração de Dados e Processos}
 		A expressão let da linguagem permite nomear qualquer expressão válida. Junto com funções lambda e currying, isso permite uma alta abstração de processos, pois podemos encapsular uma função dentro de uma expressão lambda para gerar uma nova função com comportamento específico, por exemplo.
 		
 	\subsection{Modelo de Tipos}
 		
+		OCaml usa tipagem forte, estática e inferida durante a compilação. Isso dá segurança e confiabilidade pois sabemos que as operações estarão definidas sempre e não haverá uma troca de tipo sem que o programador perceba. Linguagem com esse modelo de tipo são conhecidas por serem mais confiáveis e, se o programa compila, há uma boa chance de ele funcionar.
 		
+		Linguagens com tipagem forte e estática geralmente sofrem o problema de o programador precisar anotar os tipos em muitos pontos. No entanto, a inferência de tipos faz com que isso não seja mais um problema.
 		
 	\subsection{Portabilidade}
 		
@@ -392,7 +507,7 @@ let readElectricParticle lst =
 		
 		O pattern matching consegue reduzir consideravelmente a quantidade necessária de código para se fazer algo.
 		
-		Finalmente, características funcionais como funções lambda, currying e a facilidade de se definir funções locais fazem com que o código não precise de linhas ``inúteis'' com atribuições, declarações e variáveis temporárias.
+		Finalmente, características funcionais como funções lambda, currying e a facilidade de se definir funções locais fazem com que o código não precise de linhas ``inúteis'' com atribuições, declarações e variáveis temporárias. Um exemplo de código pequeno em OCaml e que seria maior em outras linguagens encontra-se na \autoref{readElectricParticle}.
 		
 	\subsection{Generalidade}
 	

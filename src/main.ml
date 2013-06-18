@@ -5,16 +5,6 @@ open Quadtree;;
 (* quantos milisegundos dura cada frame*)
 let mili = 15
 
-let minx = ~-. 0.5
-let miny = ~-. 0.5
-let maxx = 0.5
-let maxy = 0.5
-
-let dots = ref []
-let circles = ref []
-
-let drawTree = ref false;;
-
 (*
 	desenha cada ponto em sua posicao
 *)
@@ -26,7 +16,7 @@ let rec drawBodies points = match points with
 (*
 	atualiza o desenho
 *)
-let display dots circles ()=
+let display dots circles drawTree ()=
 	GlClear.color (0.0, 0.0, 0.0);
 	GlClear.clear [ `color ];
 	drawBodies !dots;
@@ -47,13 +37,13 @@ let reshape ~w ~h =
 	controla o passo entre um frame e outro
 	move os pontos para baixo
 *)
-let rec timerF ~value =
+let rec timerF mili dots ~value =
 	Physics.move !dots;
 	Physics.simulateElectricNaive !dots;
-	Glut.timerFunc ~ms:mili ~cb:timerF ~value:1;
+	Glut.timerFunc ~ms:mili ~cb:(timerF mili dots) ~value:1;
 	Glut.postRedisplay ()
 
-let mouseHandler ~button ~state ~x ~y =
+let mouseHandler dots ~button ~state ~x ~y =
 	let width = float_of_int (Glut.get(Glut.WINDOW_WIDTH)) in
 		let height = float_of_int (Glut.get(Glut.WINDOW_HEIGHT)) in
 		let rx = (float_of_int x) /. width in
@@ -66,7 +56,8 @@ let mouseHandler ~button ~state ~x ~y =
 			else
 				dots := ( new electric px py ~-. 0.0004 ) :: !dots
 		; ()
-let keyhandler ~key ~(x : int) ~(y : int) =
+		
+let keyhandler drawTree ~key ~(x : int) ~(y : int) =
 	if key = (int_of_char 'd') then
 		drawTree := not !drawTree
 	else ()
@@ -75,6 +66,9 @@ let keyhandler ~key ~(x : int) ~(y : int) =
 
 let _ =
 
+	let dots = ref [] in
+	let circles = ref [] in
+	let drawTree = ref true in
 	let (elec,massive) =  Loader.loadBodies "config" in
 	dots := elec;
 	circles := massive;
@@ -83,10 +77,10 @@ let _ =
 	Glut.initDisplayMode ~double_buffer:true ();
 	ignore (Glut.createWindow ~title:"Simparticle");
 
-	Glut.displayFunc ~cb:(display dots circles);
+	Glut.displayFunc ~cb:(display dots circles drawTree);
 	Glut.reshapeFunc ~cb:reshape;
-	Glut.mouseFunc ~cb:mouseHandler;
-	Glut.keyboardFunc ~cb:keyhandler;
+	Glut.mouseFunc ~cb:(mouseHandler dots);
+	Glut.keyboardFunc ~cb:(keyhandler drawTree);
 	(*Glut.idleFunc ~cb:(Some idle);*)
-	Glut.timerFunc ~ms:mili ~cb:timerF ~value:1;
+	Glut.timerFunc ~ms:mili ~cb:(timerF mili dots) ~value:1;
 	Glut.mainLoop()
