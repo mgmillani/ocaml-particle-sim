@@ -2,11 +2,11 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[brazil]{babel}
-\usepackage{hyperref}
 \usepackage{indentfirst}
 \usepackage{color}
 \usepackage{float}
 \usepackage{listings}
+\usepackage{hyperref}
 
 \hypersetup
 {
@@ -56,7 +56,7 @@
 
 \section{Descrição do problema}
 
-	O problema consiste em, dado um conjunto de partículas, similar as forças de atração e repulsão entre elas, desenhando-as conforme se movem. É feita a simulação somente das partículas elétricas usando um algoritmo de complexidade $n^2$, embora a estrutura para o algoritmo de Barnes-Hut ($n log n$) esteja implementada. Essa estrutura acabou não sendo usada por falta de tempo.
+	O problema consiste em, dado um conjunto de partículas, similar as forças de atração e repulsão entre elas, desenhando-as conforme se movem. É feita a simulação somente das partículas elétricas usando um algoritmo de complexidade $n^2$, embora a estrutura para o algoritmo de Barnes-Hut ($n \log n$) esteja implementada. Essa estrutura acabou não sendo usada por falta de tempo.
 	
 	Para desenhar numa janela, usamos as bibliotecas lablgl e lablglut, que são, respectivamente, implementações de OpenGl e GLUT para OCaml.
 	
@@ -75,7 +75,10 @@
 \section{Implementação}
 
 \subsection{Definição e uso de classes}
-	Foram criadas 4 classes: Body, Massive, Particle e Electric, sendo Body abstrata.
+	Foram criadas 4 classes: Body, Massive, Particle e Electric, sendo Body e Particle abstratas. Como o problema em si não apresenta uma noção de hierarquia e a linguagem possui características funcionais, o uso de classes complicou a implementação já que foi necessário criar classes inúteis, além de ter impedido o uso de pattern matching e gerado tipos diferentes, complicando a tipagem das funções.
+	
+	Se houvesse uma noção de hierarquia no problema, o uso de classes teria sido útil.
+	
 	\begin{figure}[H]
 	\centering	
 \begin{lstlisting}
@@ -116,7 +119,7 @@ method move =
 \end{figure}
 	
 \subsection{Organização do código em espaços de nome diferenciados}
-	Em OCaml, cada arquivo conta como um espaço diferente, de forma que este deve ser incluído com open ou prefixado com seu nome antes de ser possível usar suas funções.
+	Em OCaml, cada arquivo conta como um espaço diferente, de forma que este deve ser incluído com open ou prefixado com seu nome antes de ser possível usar suas funções. Isso é útil quando temos funções com o mesmo nome em mais de um arquivo, evitando conflitos de nome. Se a linguagem não suportasse espaços de nome, seria necessário prefixar o nome de cada função com o seu módulo.
 	
 \subsection{Mecanismo de Herança}
 	Foram usados três níveis de hierarquia, sendo que body é a superclasse de particle, que por sua vez é superclasse de electric.
@@ -134,18 +137,50 @@ class particle x y =
 	end;;
 	\end{lstlisting}
 	\caption{Implementação da classe particle, mostrando a herança}
-\end{figure}
+	\end{figure}
 
 \subsection{Especificação de uma classe abstrata}
-	A classe body é abstrata por possuir o método draw como virtual (ver \autoref{Body}).
+	A classe body é abstrata por possuir o método draw como virtual (ver \autoref{Body}). O uso de métodos abstratos serve para melhor organizar a estrutura do código e permite um comportamento mais uniforme, isto é, garantir que operações iguais terão o mesmo nome. Se não usássemos métodos abstratos, poderíamos ter definido draw para partículas elétricas e show para massivas, o que complicaria o uso das classes.
 
 \subsection{Polimorfismo por inclusão}
 	
-	Usamos polimorfismo por inclusão para desenhar os corpos. Partículas elétricas possuem uma função de desenho diferente de partículas massivas
+	Usamos polimorfismo por inclusão para desenhar os corpos. Partículas elétricas possuem uma função de desenho diferente de partículas massivas. Essa técnica é útil para facilitar estender o código. Dessa forma, se quisermos desenhar outro tipo de corpo, podemos reutilizar essa função.
+	
+	\begin{figure}[H]
+	\centering	
+	\begin{lstlisting}
+let rec drawBodies points = match points with
+  | h::r -> h#draw;
+						drawBodies r;
+	| [] -> ()
+
+let rec convertToBody lst = match lst with
+	| h::r -> (h :> Body.body)::(convertToBody r)
+	| [] -> []
+
+(*
+	atualiza o desenho
+*)
+let display dots circles drawTree ()=
+	GlClear.color (0.0, 0.0, 0.0);
+	GlClear.clear [ `color ];
+	drawBodies (List.append (convertToBody !dots)
+		(convertToBody !circles));
+	if !drawTree then
+		let dTree = Quadtree.buildQuadtree !dots in
+		let cTree = Quadtree.buildQuadtree !circles in
+		Quadtree.draw dTree;
+		Quadtree.draw cTree;
+	else
+		();
+	Glut.swapBuffers ()
+	\end{lstlisting}
+	\caption{Funções para desenho de partículas}
+	\end{figure}
 	
 \subsection{Polimorfismo paramétrico}
 	
-		Foi usada uma quadtree para a simulação das interações entre as partículas. A definição da estrutura é válida para qualquer tipo de dado, mas apenas um de cada vez, isto é, podemos ter uma árvore de inteiros, de partículas, etc... mas não podemos misturar floats e ints na mesma árvore.
+		Foi usada uma quadtree para a simulação das interações entre as partículas. A definição da estrutura é válida para qualquer tipo de dado, mas apenas um de cada vez, isto é, podemos ter uma árvore de inteiros, outra de partículas, etc... mas não podemos misturar floats e ints na mesma árvore.
 		
 		Como OCaml usa inferência de tipos, o tipo da árvore não precisa estar explícito no código.
 		
@@ -171,7 +206,7 @@ struct quadtree
 	char type;
 	union data
 	{
-		void *sections[4];
+		struct quadtree *sections[4];
 		void *leaf;
 	}	
 	float value;
@@ -244,7 +279,7 @@ let rec parseChannel chan readElement =
 	\caption{Função que lê o conteúdo de um arquivo}
 \end{figure}
 	
-	As vantagens dessa técnica foi descrita na \autoref{ElementosPrimeiraOrdem}
+	As vantagens dessa técnica é descrita na \autoref{ElementosPrimeiraOrdem}
 	
 \subsubsection{Currying}
 	
@@ -309,7 +344,7 @@ let readElectricParticle lst =
 	\caption{Função que usa pattern matching}
 \end{figure}
 
-	Para uma análise mais detalhada desda função, ver \autoref{readElectricParticle}.
+	Para uma análise mais detalhada desta função, ver \autoref{readElectricParticle}.
 
 \subsection{Recursão como mecanismo de iteração}
 
@@ -342,12 +377,14 @@ def drawBodies(bodies):
 	
 \subsection{Uso de lista para manipulação de estruturas em funções de ordem maior}
 	
-		\begin{figure}[H]
+	\begin{figure}[H]
 	\centering	
 	\begin{lstlisting}
 let rec changeValue f lst = match lst with
-	| Electric (x,y,charge)::rest -> (Electric (x,y,f charge))::(changeValue f rest)
-	| Massive (x,y,mass)::rest -> (Massive (x,y,f mass))::(changeValue f rest)
+	| Electric (x,y,charge)::rest ->
+		(Electric (x,y,f charge))::(changeValue f rest)
+	| Massive (x,y,mass)::rest ->
+		(Massive (x,y,f mass))::(changeValue f rest)
 	| _ -> []
 
 let loadBodies filename =
@@ -525,7 +562,9 @@ class virtual particle x y =
 	
 	O fato de a linguagem ser funcional facilitou bastante o uso da Quadtree por ser um estrutura naturalmente recursiva. Junto com pattern matching, cálculo lambda e a existência de múltiplos construtores para a mesma estrutura, essa função se tornou bem mais simples do que o equivalente em outras linguagens.
 	
-	A leitura do arquivo para carregar os corpos também foi bastante simples graças a pattern matching e aos tipos estruturados, pois foi possível separar em casos algo que seria transformado em um autômato para fazer o parsing.
+	A leitura do arquivo para carregar os corpos também foi bastante simples graças ao pattern matching e aos tipos estruturados, pois foi possível separar em casos simples e concisos algo que seria transformado em um autômato um tanto grande para fazer o parsing.
+	
+	Sobre a linguagem em si, achamos que é bastante boa por conseguir uma sintaxe expressiva, segurança de tipos e uma boa eficiência. No entanto, a falta de documentação unida com algumas dificuldades no processo de compilação nos fazem preferir Haskell a OCaml.
 	
 \begin{thebibliography}{4}
  \bibitem{BarnesHut}\url{http://en.wikipedia.org/wiki/Barnes-Hut\_simulation}

@@ -13,14 +13,18 @@ let rec drawBodies points = match points with
 						drawBodies r;
 	| [] -> ()
 
+let rec convertToBody lst = match lst with
+	| h::r -> (h :> Body.body)::(convertToBody r)
+	| [] -> []
+
 (*
 	atualiza o desenho
 *)
 let display dots circles drawTree ()=
 	GlClear.color (0.0, 0.0, 0.0);
 	GlClear.clear [ `color ];
-	drawBodies !dots;
-	drawBodies !circles;
+	drawBodies (List.append (convertToBody !dots)
+		(convertToBody !circles));
 	if !drawTree then
 		let dTree = Quadtree.buildQuadtree !dots in
 		let cTree = Quadtree.buildQuadtree !circles in
@@ -56,7 +60,7 @@ let mouseHandler dots ~button ~state ~x ~y =
 			else
 				dots := ( new electric px py ~-. 0.0004 ) :: !dots
 		; ()
-		
+
 let keyhandler drawTree ~key ~(x : int) ~(y : int) =
 	if key = (int_of_char 'd') then
 		drawTree := not !drawTree
